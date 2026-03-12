@@ -1,5 +1,8 @@
 #!/bin/bash -eux
 
+systemctl daemon-reload
+systemctl disable --now containerd || exit 1
+
 # Cleanup packer SSH key and machine ID generated for this boot
 rm -f /root/.ssh/authorized_keys
 rm -f /home/packer/.ssh/authorized_keys
@@ -13,5 +16,9 @@ chmod 644 /etc/machine-id
 rm -f /opt/azure/disk-usage.txt
 # remove image-fetcher binary from the image since it's only needed during build and is not expected to be present on the final image
 rm -f /opt/azure/containers/image-fetcher
+rm -rf /var/log/azure/aks
+rm -rf /var/log/azure/*.log
+rm -f /opt/azure/containers/provision.complete
+rm -f /opt/azure/containers/aks-node-controller-config.json
 # Cleanup IMDS instance metadata cache file
 rm -f /opt/azure/containers/imds_instance_metadata_cache.json
