@@ -8,6 +8,10 @@ configureAdminUser(){
     chage -I -1 -M -1 root
 }
 
+scriptlessCmdMode() {
+    echo "Scriptless command mode enabled"
+}
+
 configPrivateClusterHosts() {
     mkdir -p /etc/systemd/system/reconcile-private-hosts.service.d/
     touch /etc/systemd/system/reconcile-private-hosts.service.d/10-fqdn.conf
@@ -383,8 +387,9 @@ net.ipv4.conf.all.forwarding = 1
 net.ipv6.conf.all.forwarding = 1
 net.bridge.bridge-nf-call-iptables = 1
 EOF
-  retrycmd_if_failure 120 5 25 sysctl --system || exit $ERR_SYSCTL_RELOAD
-  systemctlEnableAndStart containerd 30 || exit $ERR_SYSTEMCTL_START_FAIL
+  # ensureSysctl occurs after this, we already call sysctl --system in ensureSysctl calling it here is a waste
+  retrycmd_if_failure 120 5 25 sysctl -p /etc/sysctl.d/99-force-bridge-forward.conf || exit $ERR_SYSCTL_RELOAD
+  systemctlEnableAndStartNoBlock containerd 30 || exit $ERR_SYSTEMCTL_START_FAIL
 }
 
 configureContainerdRegistryHost() {
@@ -783,16 +788,21 @@ EOF
         logs_to_events "AKS.CSE.ensureKubelet.ensurePodInfraContainerImage" ensurePodInfraContainerImage
     fi
 
-    # start measure-tls-bootstrapping-latency.service without waiting for the main process to start, while ignoring any failures
-    if ! systemctlEnableAndStartNoBlock measure-tls-bootstrapping-latency 30; then
-        echo "failed to start measure-tls-bootstrapping-latency.service"
-    fi
+    TLS_BOOTSTRAPPING_START_TIME_FILEPATH="/opt/azure/containers/tls-bootstrap-start-time"
+    date +"%F %T.%3N" > "${TLS_BOOTSTRAPPING_START_TIME_FILEPATH}"
 
     # start kubelet.service without waiting for the main process to start, though check whether it has entered a failed state after enablement
     if ! systemctlEnableAndStartNoBlock kubelet 240; then
         # append kubelet status to CSE output to ensure we can see it
+        rm -f "${TLS_BOOTSTRAPPING_START_TIME_FILEPATH}"
         journalctl -u kubelet.service --no-pager || true
         exit $ERR_KUBELET_START_FAIL
+    fi
+
+    # start measure-tls-bootstrapping-latency.service without waiting for the main process to start, while ignoring any failures
+    if ! systemctlEnableAndStartNoBlock measure-tls-bootstrapping-latency 30; then
+        rm -f "${TLS_BOOTSTRAPPING_START_TIME_FILEPATH}"
+        echo "failed to start measure-tls-bootstrapping-latency.service"
     fi
 }
 

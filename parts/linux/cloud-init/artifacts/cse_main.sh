@@ -58,6 +58,10 @@ get_ubuntu_release() {
 function basePrep {
     logs_to_events "AKS.CSE.aptmarkWALinuxAgent" aptmarkWALinuxAgent hold &
 
+    if [ -f "/opt/azure/containers/scriptless-cse-overrides.txt" ]; then
+        logs_to_events "AKS.CSE.scriptlessCmdMode" scriptlessCmdMode
+    fi
+
     logs_to_events "AKS.CSE.configureAdminUser" configureAdminUser
 
     UBUNTU_RELEASE=$(get_ubuntu_release)
@@ -149,8 +153,10 @@ function basePrep {
     fi
 
     # Container runtime already installed on Azure Linux OS Guard
-    if ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT"; then
+    if ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT" && [ "$FULL_INSTALL_REQUIRED" = "true" ]; then
         logs_to_events "AKS.CSE.installContainerRuntime" installContainerRuntime
+    else
+        echo "Skipping installContainerRuntime because containerd is already available"
     fi
     if [ "${TELEPORT_ENABLED}" = "true" ]; then
         logs_to_events "AKS.CSE.installTeleportdPlugin" installTeleportdPlugin
@@ -272,10 +278,6 @@ EOF
       logs_to_events "AKS.CSE.setContainerdUlimits" configureContainerdUlimits
     fi
 
-    if [ "${ENSURE_NO_DUPE_PROMISCUOUS_BRIDGE}" = "true" ]; then
-        logs_to_events "AKS.CSE.ensureNoDupOnPromiscuBridge" ensureNoDupOnPromiscuBridge
-    fi
-
     if ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT"; then
         if [ "$OS" = "$UBUNTU_OS_NAME" ] || isMarinerOrAzureLinux "$OS"; then
             logs_to_events "AKS.CSE.ubuntuSnapshotUpdate" ensureSnapshotUpdate
@@ -292,11 +294,6 @@ EOF
 
     if [ "${ARTIFACT_STREAMING_ENABLED}" = "true" ]; then
         logs_to_events "AKS.CSE.ensureContainerd.ensureArtifactStreaming" ensureArtifactStreaming || exit $ERR_ARTIFACT_STREAMING_INSTALL
-    fi
-
-    # This is to enable localdns using scriptless.
-    if [ "${SHOULD_ENABLE_LOCALDNS}" = "true" ]; then
-        logs_to_events "AKS.CSE.enableLocalDNS" enableLocalDNS || exit $ERR_LOCALDNS_FAIL
     fi
 
     if [ "${ID}" != "mariner" ] && [ "${ID}" != "azurelinux" ]; then
@@ -351,11 +348,6 @@ function nodePrep {
 
     # By default, never reboot new nodes.
     REBOOTREQUIRED=false
-
-    # Clean up GPU drivers if not a GPU node or if skipping driver install
-    if [ "${GPU_NODE}" != "true" ] || [ "${skip_nvidia_driver_install}" = "true" ]; then
-        logs_to_events "AKS.CSE.cleanUpGPUDrivers" cleanUpGPUDrivers
-    fi
 
     # Install and configure GPU drivers if this is a GPU node
     if [ "${GPU_NODE}" = "true" ] && [ "${skip_nvidia_driver_install}" != "true" ]; then
@@ -473,7 +465,20 @@ function nodePrep {
 
     logs_to_events "AKS.CSE.ensureKubelet" ensureKubelet
 
+     if [ "${ENSURE_NO_DUPE_PROMISCUOUS_BRIDGE}" = "true" ]; then
+        logs_to_events "AKS.CSE.ensureNoDupOnPromiscuBridge" ensureNoDupOnPromiscuBridge
+    fi
+
+    if [ "${SHOULD_ENABLE_LOCALDNS}" = "true" ]; then
+        logs_to_events "AKS.CSE.enableLocalDNS" enableLocalDNS || exit $ERR_LOCALDNS_FAIL
+    fi
+
     logs_to_events "AKS.CSE.configureNodeExporter" configureNodeExporter
+
+    # Clean up GPU drivers if not a GPU node or if skipping driver install
+    if [ "${GPU_NODE}" != "true" ] || [ "${skip_nvidia_driver_install}" = "true" ]; then
+        logs_to_events "AKS.CSE.cleanUpGPUDrivers" cleanUpGPUDrivers
+    fi
 
     if $REBOOTREQUIRED; then
         echo 'reboot required, rebooting node in 1 minute'
