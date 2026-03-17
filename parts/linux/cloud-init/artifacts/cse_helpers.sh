@@ -183,6 +183,7 @@ AZURELINUX_KATA_OS_NAME="AZURELINUXKATA"
 AZURELINUX_OS_NAME="AZURELINUX"
 FLATCAR_OS_NAME="FLATCAR"
 ACL_OS_NAME="AZURECONTAINERLINUX"
+ACL_OS_VARIANT="AZURECONTAINERLINUX"
 AZURELINUX_OSGUARD_OS_VARIANT="OSGUARD"
 KUBECTL=/opt/bin/kubectl
 DOCKER=/usr/bin/docker
@@ -775,6 +776,11 @@ should_enable_managed_gpu_experience() {
 
 isMarinerOrAzureLinux() {
     local os=${1-$OS}
+    local os_variant=${2-$OS_VARIANT}
+    # ACL has ID=azurelinux but is Flatcar-based and does not neccessarily match AzureLinux code paths
+    if isACL "$os" "$os_variant"; then
+        return 1
+    fi
     if [ "$os" = "$MARINER_OS_NAME" ] || [ "$os" = "$MARINER_KATA_OS_NAME" ] || [ "$os" = "$AZURELINUX_OS_NAME" ] || [ "$os" = "$AZURELINUX_KATA_OS_NAME" ]; then
         return 0
     fi
@@ -800,6 +806,11 @@ isMariner() {
 
 isAzureLinux() {
     local os=${1-$OS}
+    local os_variant=${2-$OS_VARIANT}
+    # ACL has ID=azurelinux but is Flatcar-based and does not neccessarily match AzureLinux code paths
+    if isACL "$os" "$os_variant"; then
+        return 1
+    fi
     if [ "$os" = "$AZURELINUX_OS_NAME" ] || [ "$os" = "$AZURELINUX_KATA_OS_NAME" ]; then
         return 0
     fi
@@ -816,7 +827,12 @@ isFlatcar() {
 
 isACL() {
     local os=${1-$OS}
+    local os_variant=${2-$OS_VARIANT}
     if [ "$os" = "$ACL_OS_NAME" ]; then
+        return 0
+    fi
+    # Also match when OS is AZURELINUX with VARIANT_ID=AZURECONTAINERLINUX (new os-release format)
+    if [ "$os" = "$AZURELINUX_OS_NAME" ] && [ "$os_variant" = "$ACL_OS_VARIANT" ]; then
         return 0
     fi
     return 1
@@ -875,9 +891,9 @@ getPackageJSON() {
         search=".downloadURIs.${osLowerCase}.\"${osVariant}/r${osVersion//.}\" // .downloadURIs.${osLowerCase}.\"r${osVersion//.}\" // ${search}"
     fi
 
-    # ACL is Flatcar-based; fall back to flatcar entries when acl-specific entries are not found.
-    if isACL "${os}"; then
-        search=".downloadURIs.${osLowerCase}.\"${osVariant}/current\" // .downloadURIs.${osLowerCase}.current // .downloadURIs.flatcar.current // .downloadURIs.default.current"
+    # ACL is Flatcar-based; use flatcar download entries.
+    if isACL "${os}" "${osVariant}"; then
+        search=".downloadURIs.flatcar.current // .downloadURIs.default.current"
     fi
 
     jq -r -c "${search}" <<< "${package}"
