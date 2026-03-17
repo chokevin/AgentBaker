@@ -130,7 +130,7 @@ fi
 #   addMarinerNvidiaRepo / updateDnfWithNvidiaPkg / disableDNFAutomatic / enableCheckRestart — ACL has no dnf/rpm
 #   activateNfConntrack — nf_conntrack auto-loads via iptables dependency chain
 #   disableTimesyncd — ACL handles chrony separately above via disableNtpAndTimesyncdInstallChrony
-if isACL "$OS"; then
+if isACL "$OS" "$OS_VARIANT"; then
   # ACL's iptables.service loads host firewall rules that conflict with Cilium eBPF routing.
   disableSystemdIptables || exit 1
   # Repoint /etc/resolv.conf from the stub (127.0.0.53) to the real upstream file
@@ -442,7 +442,7 @@ while IFS= read -r p; do
       done
       ;;
     "inspektor-gadget")
-      if isMariner "$OS" || isFlatcar "$OS" || isACL "$OS" || isAzureLinuxOSGuard "$OS" "$OS_VARIANT" || [ "${IS_KATA}" = "true" ]; then
+      if isMariner "$OS" || isFlatcar "$OS" || isACL "$OS" "$OS_VARIANT" || isAzureLinuxOSGuard "$OS" "$OS_VARIANT" || [ "${IS_KATA}" = "true" ]; then
         echo "Skipping inspektor-gadget installation for ${OS} ${OS_VARIANT:-default} (IS_KATA=${IS_KATA})"
       else
         ig_version="${PACKAGE_VERSIONS[0]}"
@@ -474,7 +474,7 @@ while IFS= read -r p; do
       for version in ${PACKAGE_VERSIONS[@]}; do
         if isMarinerOrAzureLinux || isUbuntu; then
           downloadPkgFromVersion "${name}" "${version}" "${downloadDir}"
-        elif isFlatcar || isACL; then
+        elif isFlatcar || isACL "$OS" "$OS_VARIANT"; then
           evaluatedURL=$(evalPackageDownloadURL ${PACKAGE_DOWNLOAD_URL})
           downloadSysextFromVersion "${name}" "${evaluatedURL}" "${downloadDir}" || exit $?
         fi
@@ -561,7 +561,7 @@ fi
 # Artifact Streaming enabled for Azure Linux 2.0 and 3.0
 if [ "$OS" = "$MARINER_OS_NAME" ] && [ "$OS_VERSION" = "2.0" ] && [ "$(isARM64)" -ne 1 ]; then
   installAndConfigureArtifactStreaming acr-mirror-mariner rpm
-elif ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT" && [ "$OS" = "$AZURELINUX_OS_NAME" ] && [ "$OS_VERSION" = "3.0" ] && [ "$(isARM64)" -ne 1 ]; then
+elif ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT" && ! isACL "$OS" "$OS_VARIANT" && [ "$OS" = "$AZURELINUX_OS_NAME" ] && [ "$OS_VERSION" = "3.0" ] && [ "$(isARM64)" -ne 1 ]; then
   installAndConfigureArtifactStreaming acr-mirror-azurelinux3 rpm
 fi
 
