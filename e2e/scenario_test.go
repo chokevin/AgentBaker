@@ -382,6 +382,10 @@ func Test_ACL_GPUH100(t *testing.T) {
 	runScenarioACLGPU(t, "Standard_ND96isr_H100_v5")
 }
 
+func Test_ACL_GPUA100(t *testing.T) {
+	runScenarioACLGPU(t, "Standard_NC24ads_A100_v4")
+}
+
 func Test_ACL_GPUA10(t *testing.T) {
 	runScenarioACLGRID(t, "Standard_NV6ads_A10_v5")
 }
@@ -409,6 +413,7 @@ func runScenarioACLGPU(t *testing.T, vmSize string) {
 			Validator: func(ctx context.Context, s *Scenario) {
 				// Ensure nvidia-modprobe install does not restart kubelet and temporarily cause node to be unschedulable
 				ValidateNvidiaModProbeInstalled(ctx, s)
+				ValidateNvidiaPersistencedRunning(ctx, s)
 			},
 		},
 	})
@@ -1900,6 +1905,35 @@ func Test_AzureLinuxV3_GPU(t *testing.T) {
 				vmss.SKU.Name = to.Ptr("Standard_NC6s_v3")
 			},
 			Validator: func(ctx context.Context, s *Scenario) {
+			},
+		},
+	})
+}
+
+func Test_AzureLinuxV3_GPUA10(t *testing.T) {
+	RunScenario(t, &Scenario{
+		Description: "Tests that a GPU-enabled node with A10 GPU SKU using a AzureLinuxV3 (CgroupV2) VHD can be properly bootstrapped",
+		Tags: Tags{
+			GPU: true,
+		},
+		Config: Config{
+			Cluster: ClusterKubenet,
+			VHD:     config.VHDAzureLinuxV3Gen2,
+			BootstrapConfigMutator: func(nbc *datamodel.NodeBootstrappingConfiguration) {
+				nbc.AgentPoolProfile.VMSize = "Standard_NV6ads_A10_v5"
+				nbc.ConfigGPUDriverIfNeeded = true
+				nbc.EnableGPUDevicePluginIfNeeded = false
+				nbc.EnableNvidia = true
+			},
+			VMConfigMutator: func(vmss *armcompute.VirtualMachineScaleSet) {
+				vmss.SKU.Name = to.Ptr("Standard_NV6ads_A10_v5")
+			},
+			Validator: func(ctx context.Context, s *Scenario) {
+				ValidateNvidiaModProbeInstalled(ctx, s)
+				ValidateNvidiaGRIDLicenseValid(ctx, s)
+				ValidateKubeletHasNotStopped(ctx, s)
+				ValidateServicesDoNotRestartKubelet(ctx, s)
+				ValidateNvidiaPersistencedRunning(ctx, s)
 			},
 		},
 	})

@@ -21,15 +21,18 @@ downloadSysextFromVersion() {
 
 matchLocalSysext() {
     local seName=$1 desiredVer=$2 seArch=$3
+    local downloadDir="/opt/${seName}/downloads"
     # Try arch-specific versioned filename first (kubelet-style: name-vVER.X-arch.raw)
     local match
-    match=$(printf "%s\n" "/opt/${seName}/downloads/${seName}-v${desiredVer}"[.~-]*"-${seArch}.raw" | sort -V | tail -n1)
+    match=$(find "${downloadDir}" -maxdepth 2 -name "${seName}-v${desiredVer}*-${seArch}.raw" -type f 2>/dev/null | sort -V | tail -n1)
     if [ -f "${match}" ]; then
         echo "${match}"
         return
     fi
-    # Fallback: GPU sysexts are downloaded as simple name.raw (e.g. nvidia-driver-vgpu.raw)
-    match=$(find "/opt/${seName}/downloads" -maxdepth 1 -name "${seName}.raw" -type f 2>/dev/null | head -n1)
+    # Fallback: GPU sysexts are downloaded as simple name.raw (e.g. nvidia-driver-vgpu.raw).
+    # MCR artifacts may place files in an arch subdirectory (e.g. amd64/name.raw),
+    # so search up to 2 levels deep.
+    match=$(find "${downloadDir}" -maxdepth 2 -name "${seName}.raw" -type f 2>/dev/null | head -n1)
     echo "${match}"
 }
 
@@ -128,7 +131,7 @@ getACLVersionID() {
 installACLGPUSysext() {
     local sysext_name=$1
     local version_id=$(getACLVersionID) || exit $ERR_SYSEXT_VERSION_ID_NOT_FOUND
-    local registry_base="acldevsysext.azurecr.io/azurelinux/${version_id%.*}/azure-container-linux"
+    local registry_base="mcr.microsoft.com/azurelinux/${version_id%.*}/azure-container-linux"
     mergeSysexts "${sysext_name}" "${registry_base}/${sysext_name}" "${version_id}" \
         || exit $ERR_ORAS_PULL_SYSEXT_FAIL
 }
