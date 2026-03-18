@@ -19,6 +19,8 @@ Describe 'Get-KubePackage' {
         } -Verifiable
 
         $global:CacheDir = 'c:\akse-cache'
+        # Ensure no global state leaked from other test files
+        $global:BootstrapProfileContainerRegistryServer = $null
     }
 
     Context 'mapping file exists' {
@@ -72,8 +74,6 @@ Describe 'Get-KubePackage' {
 
             $global:BootstrapProfileContainerRegistryServer = "myregistry.azurecr.io"
             $global:KubeBinariesVersion = "1.29.2"
-            $global:OrasPath = "C:\aks-tools\oras\oras.exe"
-            $global:OrasRegistryConfigFile = "C:\oras-config.json"
         }
 
         AfterEach {
