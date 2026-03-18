@@ -199,7 +199,7 @@ function Get-KubePackage {
     # download kubelet binaries via http if BootstrapProfileContainerRegistryServer is not set
     # default path
     if ([string]::IsNullOrEmpty($global:BootstrapProfileContainerRegistryServer)) {
-        Logs-To-Event -TaskName "AKS.WindowsCSE.DownloadKubletBinaries" -TaskMessage "Start to download kubelet binaries and unzip. KubeBinariesPackageSASURL: $KubeBinariesSASURL"
+        Logs-To-Event -TaskName "AKS.WindowsCSE.DownloadKubeletBinaries" -TaskMessage "Start to download kubelet binaries and unzip. KubeBinariesPackageSASURL: $KubeBinariesSASURL"
 
         for ($i = 0; $i -le 10; $i++) {
             DownloadFileOverHttp -Url $KubeBinariesSASURL -DestinationPath $zipfile -ExitCode $global:WINDOWS_CSE_ERROR_DOWNLOAD_KUBERNETES_PACKAGE
@@ -218,7 +218,7 @@ function Get-KubePackage {
         if (-not (Get-Command 'DownloadFileWithOras' -ErrorAction SilentlyContinue)) {
             Set-ExitCode -ExitCode $global:WINDOWS_CSE_ERROR_ORAS_PULL_WINDOWSZIP_FAIL -ErrorMessage "DownloadFileWithOras function is not available. networkisolatedclusterfunc.ps1 may not be sourced."
         }
-        Logs-To-Event -TaskName "AKS.WindowsCSE.DownloadKubletBinariesWithOras" -TaskMessage "Start to download kubelet binaries with oras. KubeBinariesVersion: $global:KubeBinariesVersion, BootstrapProfileContainerRegistryServer: $global:BootstrapProfileContainerRegistryServer"
+        Logs-To-Event -TaskName "AKS.WindowsCSE.DownloadKubeletBinariesWithOras" -TaskMessage "Start to download kubelet binaries with oras. KubeBinariesVersion: $global:KubeBinariesVersion, BootstrapProfileContainerRegistryServer: $global:BootstrapProfileContainerRegistryServer"
         $orasReference = "$($global:BootstrapProfileContainerRegistryServer)/aks/packages/kubernetes/windowszip:v$($global:KubeBinariesVersion)"
         try {
             Retry-Command -Command "DownloadFileWithOras" -Args @{Reference=$orasReference; DestinationPath=$zipfile; ExitCode=$global:WINDOWS_CSE_ERROR_ORAS_PULL_WINDOWSZIP_FAIL} -Retries 5 -RetryDelaySeconds 10

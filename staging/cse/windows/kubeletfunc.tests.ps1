@@ -96,7 +96,7 @@ Describe 'Get-KubePackage' {
 
         It "Should call Logs-To-Event with ORAS task name when BootstrapProfileContainerRegistryServer is set" {
             Get-KubePackage -KubeBinariesSASURL 'https://xxx.blob.core.windows.net/kubernetes/v1.29.2/windowszip/v1.29.2-1int.zip'
-            Assert-MockCalled -CommandName 'Logs-To-Event' -Exactly -Times 1 -ParameterFilter { $TaskName -eq 'AKS.WindowsCSE.DownloadKubletBinariesWithOras' }
+            Assert-MockCalled -CommandName 'Logs-To-Event' -Exactly -Times 1 -ParameterFilter { $TaskName -eq 'AKS.WindowsCSE.DownloadKubeletBinariesWithOras' }
         }
 
         It "Should still expand archive and clean up zip file after ORAS download" {
@@ -157,7 +157,7 @@ Describe 'Get-KubePackage' {
         It "Should call Logs-To-Event with HTTP download task name" {
             $global:KubeBinariesVersion = '1.29.2'
             Get-KubePackage -KubeBinariesSASURL 'https://xxx.blob.core.windows.net/kubernetes/v1.29.2/windowszip/v1.29.2-1int.zip'
-            Assert-MockCalled -CommandName 'Logs-To-Event' -Exactly -Times 1 -ParameterFilter { $TaskName -eq 'AKS.WindowsCSE.DownloadKubletBinaries' }
+            Assert-MockCalled -CommandName 'Logs-To-Event' -Exactly -Times 1 -ParameterFilter { $TaskName -eq 'AKS.WindowsCSE.DownloadKubeletBinaries' }
         }
 
         It "Should call DownloadFileOverHttp when BootstrapProfileContainerRegistryServer is empty string" {
