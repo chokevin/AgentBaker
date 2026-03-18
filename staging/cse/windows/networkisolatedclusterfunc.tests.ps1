@@ -399,7 +399,7 @@ Describe "DownloadFileWithOras" {
         [Parameter(Mandatory = $true)][int]$ExitCode,
         [Parameter(Mandatory = $true)][string]$ErrorMessage
       )
-      throw "Set-ExitCode:$ExitCode:$ErrorMessage"
+      throw "Set-ExitCode:${ExitCode}:${ErrorMessage}"
     }
     Mock Get-Item -MockWith {
       param($Path)
