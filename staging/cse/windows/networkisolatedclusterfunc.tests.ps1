@@ -394,7 +394,13 @@ Describe "DownloadFileWithOras" {
     $global:OrasRegistryConfigFile = "C:\oras-config.json"
     $global:AppInsightsClient = $null
 
-    Mock Set-ExitCode -MockWith { throw "Set-ExitCode:$($ExitCode):$ErrorMessage" }
+    Mock Set-ExitCode -MockWith {
+      Param(
+        [Parameter(Mandatory = $true)][int]$ExitCode,
+        [Parameter(Mandatory = $true)][string]$ErrorMessage
+      )
+      throw "Set-ExitCode:$ExitCode:$ErrorMessage"
+    }
     Mock Get-Item -MockWith {
       param($Path)
       return New-Object -TypeName PSObject -Property @{ FullName = $Path }
