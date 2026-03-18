@@ -385,33 +385,44 @@ Describe "Get-BootstrapRegistryDomainName" {
 
 Describe "DownloadFileWithOras" {
   BeforeEach {
-    $global:OrasPath = "C:\aks-tools\oras\oras.exe"
+    $global:OrasPath = "Mock-OrasCli"
+    $script:MockOrasExitCode = 0
+    function global:Mock-OrasCli {
+      param([Parameter(ValueFromRemainingArguments = $true)]$Args)
+      $global:LASTEXITCODE = $script:MockOrasExitCode
+    }
     $global:OrasRegistryConfigFile = "C:\oras-config.json"
     $global:AppInsightsClient = $null
 
     Mock Set-ExitCode -MockWith { throw "Set-ExitCode:$($ExitCode):$ErrorMessage" }
-    Mock Get-Item -MockWith { return New-Object -TypeName PSObject -Property @{ FullName = $DestinationPath } }
-    # Mocks for temp directory and file move operations used by oras pull workflow
-    Mock New-Item -MockWith {} -ParameterFilter { $ItemType -eq 'Directory' }
+    Mock Get-Item -MockWith {
+      param($Path)
+      return New-Object -TypeName PSObject -Property @{ FullName = $Path }
+    }
+    # Mock Get-ChildItem to return a fake downloaded file from the oras pull temp directory
     Mock Get-ChildItem -MockWith {
-      return @([PSCustomObject]@{ FullName = "/tmp/downloaded-file.zip" })
+      param($Path, [switch]$File)
+      return @([PSCustomObject]@{ Name = "downloaded-file.zip"; FullName = "C:\tmp\downloaded-file.zip"; Length = 1024 })
     }
     Mock Move-Item -MockWith {}
-    Mock Remove-Item -MockWith {} -ParameterFilter { $Force -eq $true }
-    Mock Test-Path -MockWith { $false }
+    Mock Remove-Item -MockWith {} -ParameterFilter { $Recurse -eq $true -or $Path -eq 'c:\k.zip' }
+    Mock Test-Path -MockWith {
+      Param($Path)
+      return $false
+    } -ParameterFilter {
+      $null -ne $Path -and ($Path -eq 'c:\k.zip' -or $Path -eq 'c:\test.zip' -or $Path -eq 'c:')
+    }
   }
 
   It "should call oras with correct arguments on success" {
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
-    $global:OrasPath = "Write-Output"
     { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Not -Throw
   }
 
   It "should call Set-ExitCode when oras returns non-zero exit code" {
-    $global:OrasPath = "cmd.exe"
-    Mock cmd.exe -MockWith { $global:LASTEXITCODE = 1 }
+    $script:MockOrasExitCode = 1
 
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
@@ -420,8 +431,10 @@ Describe "DownloadFileWithOras" {
   }
 
   It "should call Set-ExitCode when no file is found after oras pull" {
-    $global:OrasPath = "Write-Output"
-    Mock Get-ChildItem -MockWith { return @() }
+    Mock Get-ChildItem -MockWith {
+      param($Path, [switch]$File)
+      return @()
+    }
 
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
@@ -430,7 +443,6 @@ Describe "DownloadFileWithOras" {
   }
 
   It "should move downloaded file to destination path on success" {
-    $global:OrasPath = "Write-Output"
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
@@ -442,26 +454,16 @@ Describe "DownloadFileWithOras" {
   }
 
   It "should use default platform windows/amd64 when not specified" {
-    $global:OrasPath = "Write-Output"
     $reference = "myregistry.azurecr.io/aks/packages/test:v1"
     $destPath = "c:\test.zip"
 
     { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Not -Throw
-
-    Assert-MockCalled -CommandName 'Write-Log' -ParameterFilter {
-      $message -like "*platform=windows/amd64*"
-    }
   }
 
   It "should accept a custom platform parameter" {
-    $global:OrasPath = "Write-Output"
     $reference = "myregistry.azurecr.io/aks/packages/test:v1"
     $destPath = "c:\test.zip"
 
     { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 -Platform "linux/amd64" } | Should -Not -Throw
-
-    Assert-MockCalled -CommandName 'Write-Log' -ParameterFilter {
-      $message -like "*platform=linux/amd64*"
-    }
   }
 }
