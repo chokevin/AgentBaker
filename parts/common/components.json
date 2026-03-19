@@ -1584,7 +1584,7 @@
               {
                 "k8sVersion": "1.35",
                 "renovateTag": "name=kubectl, repository=production, os=ubuntu, release=22.04",
-                "latestVersion": "1.35.1-ubuntu22.04u1"
+                "latestVersion": "1.35.1-ubuntu22.04u2"
               }
             ]
           },
