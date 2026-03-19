@@ -130,7 +130,8 @@ getACLVersionID() {
 # Example: mcr.microsoft.com/azurelinux/3.0/azure-container-linux/nvidia-driver-cuda:3.0.20260304
 installACLGPUSysext() {
     local sysext_name=$1
-    local version_id=$(getACLVersionID) || exit $ERR_SYSEXT_VERSION_ID_NOT_FOUND
+    local version_id
+    version_id=$(getACLVersionID) || exit $ERR_SYSEXT_VERSION_ID_NOT_FOUND
     local registry_base="mcr.microsoft.com/azurelinux/${version_id%.*}/azure-container-linux"
     mergeSysexts "${sysext_name}" "${registry_base}/${sysext_name}" "${version_id}" \
         || exit $ERR_ORAS_PULL_SYSEXT_FAIL
