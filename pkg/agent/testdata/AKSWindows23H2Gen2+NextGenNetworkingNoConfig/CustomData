@@ -399,6 +399,8 @@ function BasePrep {
     # In case of AKSCustomCloud, customer cloud env will be loaded from azurestackcloud.json
     
 
+    Get-CACertificates -Location $Location
+
     Write-CACert -CACertificate $global:CACertificate `
         -KubeDir $global:KubeDir
 
@@ -440,6 +442,9 @@ function BasePrep {
     Adjust-DynamicPortRange
     Register-LogsCleanupScriptTask
     Register-NodeResetScriptTask
+    # Compute cert endpoint mode from location for use in scheduled refresh task
+    $certEndpointMode = Get-CustomCloudCertEndpointModeFromLocation -Location $Location
+    Register-CACertificatesRefreshTask -Location $Location -CertEndpointMode $certEndpointMode
 
     Update-DefenderPreferences
 
