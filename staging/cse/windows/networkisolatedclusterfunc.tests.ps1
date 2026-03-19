@@ -424,19 +424,19 @@ Describe "DownloadFileWithOras" {
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Not -Throw
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath } | Should -Not -Throw
   }
 
-  It "should call Set-ExitCode when oras returns non-zero exit code" {
+  It "should throw when oras returns non-zero exit code" {
     $script:MockOrasExitCode = 1
 
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Throw "*Set-ExitCode:80:oras pull failed*"
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath } | Should -Throw "*oras pull failed*"
   }
 
-  It "should call Set-ExitCode when no file is found after oras pull" {
+  It "should throw when no file is found after oras pull" {
     Mock Get-ChildItem -MockWith {
       param($Path, [switch]$File)
       return @()
@@ -445,14 +445,14 @@ Describe "DownloadFileWithOras" {
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Throw "*Set-ExitCode:80:oras pull succeeded but no file found*"
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath } | Should -Throw "*oras pull succeeded but no file found*"
   }
 
   It "should move downloaded file to destination path on success" {
     $reference = "myregistry.azurecr.io/aks/packages/kubernetes/windowszip:1.29.2"
     $destPath = "c:\k.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Not -Throw
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath } | Should -Not -Throw
 
     Assert-MockCalled -CommandName 'Move-Item' -Exactly -Times 1 -ParameterFilter {
       $Destination -eq $destPath
@@ -463,13 +463,13 @@ Describe "DownloadFileWithOras" {
     $reference = "myregistry.azurecr.io/aks/packages/test:v1"
     $destPath = "c:\test.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 } | Should -Not -Throw
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath } | Should -Not -Throw
   }
 
   It "should accept a custom platform parameter" {
     $reference = "myregistry.azurecr.io/aks/packages/test:v1"
     $destPath = "c:\test.zip"
 
-    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -ExitCode 80 -Platform "linux/amd64" } | Should -Not -Throw
+    { DownloadFileWithOras -Reference $reference -DestinationPath $destPath -Platform "linux/amd64" } | Should -Not -Throw
   }
 }

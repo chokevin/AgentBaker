@@ -372,8 +372,6 @@ function DownloadFileWithOras {
         $Reference,
         [Parameter(Mandatory = $true)][string]
         $DestinationPath,
-        [Parameter(Mandatory = $true)][int]
-        $ExitCode,
         [Parameter(Mandatory = $false)][string]
         $Platform = "windows/amd64"
     )
@@ -397,7 +395,7 @@ function DownloadFileWithOras {
     if ($LASTEXITCODE -ne 0) {
         $downloadTimer.Stop()
         Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-        Set-ExitCode -ExitCode $ExitCode -ErrorMessage "oras pull failed with exit code $LASTEXITCODE for $Reference"
+        throw "oras pull failed with exit code $LASTEXITCODE for $Reference"
     }
     $downloadTimer.Stop()
     $elapsedMs = $downloadTimer.ElapsedMilliseconds
@@ -406,7 +404,7 @@ function DownloadFileWithOras {
     $downloadedFile = Get-ChildItem -Path $tempDir -File | Select-Object -First 1
     if (-not $downloadedFile) {
         Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-        Set-ExitCode -ExitCode $ExitCode -ErrorMessage "oras pull succeeded but no file found in temp directory for $Reference"
+        throw "oras pull succeeded but no file found in temp directory for $Reference"
     }
 
     Write-Log "Downloaded file name: $($downloadedFile.Name) (size: $($downloadedFile.Length) bytes) in temp directory $tempDir"
