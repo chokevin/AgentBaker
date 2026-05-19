@@ -1635,6 +1635,7 @@ SETUP_EOF
             CTR_GPU_INSTALL_CMD="ctr-gpu-install"
             GPU_DEST="/opt/gpu"
             CTR_STATUS=0
+            CONTAINERD_READY_STATUS=0
             GPUINSTALL_STATUS=0
             MODPROBE_STATUS=0
             SMI_STATUS=0
@@ -1648,6 +1649,10 @@ SETUP_EOF
 
         ctr() {
             return "$CTR_STATUS"
+        }
+
+        waitForContainerdReady() {
+            return "$CONTAINERD_READY_STATUS"
         }
 
         which() {
@@ -1681,8 +1686,8 @@ SETUP_EOF
 
         BeforeEach 'setup'
 
-        It 'exits with containerd-not-ready when the Ubuntu GPU driver image pull fails'
-            CTR_STATUS=1
+        It 'exits with containerd-not-ready when the Ubuntu containerd readiness check fails'
+            CONTAINERD_READY_STATUS=1
             When run configGPUDrivers
             The status should equal 88
         End
