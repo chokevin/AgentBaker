@@ -1702,20 +1702,20 @@ SETUP_EOF
         It 'exits with nvidia-modprobe-fail when post-install module loading fails'
             MODPROBE_STATUS=1
             When run configGPUDrivers
-            The status should equal 241
+            The status should equal 243
         End
 
         It 'exits with nvidia-ldconfig-fail when linker cache refresh fails'
             LDCONFIG_STATUS=1
             When run configGPUDrivers
-            The status should equal 244
+            The status should equal 246
         End
 
         It 'exits with nvidia-smi-fail for generic nvidia-smi validation failures'
             SMI_STATUS=1
             SMI_OUTPUT="Failed to initialize NVML"
             When run validateGPUDrivers
-            The status should equal 243
+            The status should equal 245
             The output should include "gpu driver loaded"
         End
 
@@ -1730,10 +1730,10 @@ SETUP_EOF
         It 'preserves a specific configGPUDrivers failure during validate fallback'
             MODPROBE_STATUS=1
             configGPUDrivers() {
-                return 244
+                return 246
             }
             When run validateGPUDrivers
-            The status should equal 244
+            The status should equal 246
         End
     End
 End
