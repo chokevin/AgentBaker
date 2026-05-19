@@ -324,20 +324,6 @@ retrycmd_silent() {
     _retrycmd_internal "$1" "$2" "$3" "false" "${@:4}"
 }
 
-waitForContainerdReady() {
-    local ret=0
-
-    echo "Waiting for containerd to become ready..."
-    retrycmd_if_failure 240 0.1 1 bash -c 'ctr version >/dev/null 2>&1'
-    ret=$?
-    if [ "$ret" -ne 0 ]; then
-        echo "containerd did not become ready"
-        systemctl status containerd --no-pager -l > /var/log/azure/containerd-status.log || true
-    fi
-
-    return "$ret"
-}
-
 retrycmd_nslookup() {
     wait_sleep=$1; timeout=$2; total_timeout=$3; record=$4
     start_time=$(date +%s)
