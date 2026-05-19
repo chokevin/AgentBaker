@@ -1625,4 +1625,110 @@ SETUP_EOF
             The output should include "rm -f /opt/azure/containers/managed-gpu-experience.enabled"
         End
     End
+
+    Describe 'GPU driver error codes'
+        setup() {
+            OS="$UBUNTU_OS_NAME"
+            OS_VARIANT=""
+            NVIDIA_DRIVER_IMAGE="mcr.microsoft.com/aks/aks-gpu-cuda"
+            NVIDIA_DRIVER_IMAGE_TAG="test-tag"
+            CTR_GPU_INSTALL_CMD="ctr-gpu-install"
+            GPU_DEST="/opt/gpu"
+            CTR_STATUS=0
+            GPUINSTALL_STATUS=0
+            MODPROBE_STATUS=0
+            SMI_STATUS=0
+            LDCONFIG_STATUS=0
+            SMI_OUTPUT=""
+        }
+
+        mkdir() {
+            return 0
+        }
+
+        ctr() {
+            return "$CTR_STATUS"
+        }
+
+        which() {
+            return 0
+        }
+
+        isARM64() {
+            echo 0
+        }
+
+        retrycmd_if_failure() {
+            case "$*" in
+                *gpuinstall*)
+                    return "$GPUINSTALL_STATUS"
+                    ;;
+                *nvidia-modprobe*)
+                    return "$MODPROBE_STATUS"
+                    ;;
+                *nvidia-smi*)
+                    if [ -n "$SMI_OUTPUT" ]; then
+                        echo "$SMI_OUTPUT"
+                    fi
+                    return "$SMI_STATUS"
+                    ;;
+                *ldconfig*)
+                    return "$LDCONFIG_STATUS"
+                    ;;
+            esac
+            return 0
+        }
+
+        BeforeEach 'setup'
+
+        It 'exits with containerd-not-ready when the Ubuntu GPU driver image pull fails'
+            CTR_STATUS=1
+            When run configGPUDrivers
+            The status should equal 88
+        End
+
+        It 'exits with driver-container-install-fail when the Ubuntu gpuinstall command fails'
+            GPUINSTALL_STATUS=1
+            When run configGPUDrivers
+            The status should equal 89
+            The output should include "Failed to install GPU driver, exiting..."
+        End
+
+        It 'exits with nvidia-modprobe-fail when post-install module loading fails'
+            MODPROBE_STATUS=1
+            When run configGPUDrivers
+            The status should equal 232
+        End
+
+        It 'exits with nvidia-ldconfig-fail when linker cache refresh fails'
+            LDCONFIG_STATUS=1
+            When run configGPUDrivers
+            The status should equal 235
+        End
+
+        It 'exits with nvidia-smi-fail for generic nvidia-smi validation failures'
+            SMI_STATUS=1
+            SMI_OUTPUT="Failed to initialize NVML"
+            When run validateGPUDrivers
+            The status should equal 234
+            The output should include "gpu driver loaded"
+        End
+
+        It 'preserves the existing infoROM corrupted code for nvidia-smi output'
+            SMI_STATUS=1
+            SMI_OUTPUT="infoROM is corrupted"
+            When run validateGPUDrivers
+            The status should equal 87
+            The output should include "gpu driver loaded"
+        End
+
+        It 'preserves a specific configGPUDrivers failure during validate fallback'
+            MODPROBE_STATUS=1
+            configGPUDrivers() {
+                return 235
+            }
+            When run validateGPUDrivers
+            The status should equal 235
+        End
+    End
 End

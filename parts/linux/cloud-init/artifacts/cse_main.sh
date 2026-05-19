@@ -431,7 +431,7 @@ function nodePrep {
                 logs_to_events "AKS.CSE.installNvidiaFabricManagerSysext" installNvidiaFabricManagerSysext
             fi
             # Start fabric manager service
-            logs_to_events "AKS.CSE.nvidia-fabricmanager" "systemctlEnableAndStart nvidia-fabricmanager 30" || exit $ERR_GPU_DRIVERS_START_FAIL
+            logs_to_events "AKS.CSE.nvidia-fabricmanager" "systemctlEnableAndStart nvidia-fabricmanager 30" || exit $ERR_NVIDIA_FABRIC_MANAGER_START_FAIL
         else
             # Disable fabric manager service if it's not needed
             # The NVIDIA driver installation may automatically enable this service,

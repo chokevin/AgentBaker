@@ -958,14 +958,14 @@ configAzurePolicyAddon() {
 
 configGPUDrivers() {
     if [ "$OS" = "$UBUNTU_OS_NAME" ]; then
-        waitForContainerdReady || exit $ERR_GPU_DRIVERS_START_FAIL
+        waitForContainerdReady || exit $ERR_GPU_CONTAINERD_NOT_READY
         mkdir -p /opt/{actions,gpu}
         ctr -n k8s.io image pull $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG
         retrycmd_if_failure 5 10 600 bash -c "$CTR_GPU_INSTALL_CMD $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG gpuinstall /entrypoint.sh install"
         ret=$?
         if [ "$ret" -ne 0 ]; then
             echo "Failed to install GPU driver, exiting..."
-            exit $ERR_GPU_DRIVERS_START_FAIL
+            exit $ERR_GPU_DRIVER_CONTAINER_INSTALL_FAIL
         fi
         ctr -n k8s.io images rm --sync $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG
     elif isMarinerOrAzureLinux "$OS" && ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT"; then
@@ -981,9 +981,9 @@ configGPUDrivers() {
         exit 1
     fi
 
-    retrycmd_if_failure 120 5 25 nvidia-modprobe -u -c0 || exit $ERR_GPU_DRIVERS_START_FAIL
-    retrycmd_if_failure 120 5 30 nvidia-smi || exit $ERR_GPU_DRIVERS_START_FAIL
-    retrycmd_if_failure 120 5 25 ldconfig || exit $ERR_GPU_DRIVERS_START_FAIL
+    retrycmd_if_failure 120 5 25 nvidia-modprobe -u -c0 || exit $ERR_NVIDIA_MODPROBE_FAIL
+    retrycmd_if_failure 120 5 30 nvidia-smi || exit $ERR_NVIDIA_SMI_FAIL
+    retrycmd_if_failure 120 5 25 ldconfig || exit $ERR_NVIDIA_LDCONFIG_FAIL
 
     # Fix the NVIDIA /dev/char link issue (Mariner/AzureLinux only)
     if isMarinerOrAzureLinux "$OS"; then
@@ -1008,7 +1008,17 @@ validateGPUDrivers() {
         return
     fi
 
-    retrycmd_if_failure 24 5 25 nvidia-modprobe -u -c0 && echo "gpu driver loaded" || configGPUDrivers || exit $ERR_GPU_DRIVERS_START_FAIL
+    if retrycmd_if_failure 24 5 25 nvidia-modprobe -u -c0; then
+        echo "gpu driver loaded"
+    else
+        configGPUDrivers
+        ret=$?
+        if [ "$ret" -eq 1 ]; then
+            exit $ERR_GPU_DRIVERS_START_FAIL
+        elif [ "$ret" -ne 0 ]; then
+            exit "$ret"
+        fi
+    fi
 
     if which nvidia-smi; then
         SMI_RESULT=$(retrycmd_if_failure 24 5 30 nvidia-smi)
@@ -1021,7 +1031,7 @@ validateGPUDrivers() {
         if [[ $SMI_RESULT == *"infoROM is corrupted"* ]]; then
             exit $ERR_GPU_INFO_ROM_CORRUPTED
         else
-            exit $ERR_GPU_DRIVERS_START_FAIL
+            exit $ERR_NVIDIA_SMI_FAIL
         fi
     else
         echo "gpu driver working fine"
@@ -1039,7 +1049,7 @@ ensureGPUDrivers() {
         logs_to_events "AKS.CSE.ensureGPUDrivers.validateGPUDrivers" validateGPUDrivers
     fi
     if [ "$OS" = "$UBUNTU_OS_NAME" ]; then
-        logs_to_events "AKS.CSE.ensureGPUDrivers.nvidia-modprobe" "systemctlEnableAndStart nvidia-modprobe 30" || exit $ERR_GPU_DRIVERS_START_FAIL
+        logs_to_events "AKS.CSE.ensureGPUDrivers.nvidia-modprobe" "systemctlEnableAndStart nvidia-modprobe 30" || exit $ERR_NVIDIA_MODPROBE_FAIL
     fi
 }
 

@@ -46,10 +46,12 @@ ERR_CONTAINERD_DOWNLOAD_TIMEOUT=70 # Timeout waiting for containerd downloads
 ERR_RUNC_DOWNLOAD_TIMEOUT=71 # Timeout waiting for runc downloads
 ERR_CUSTOM_SEARCH_DOMAINS_FAIL=80 # Unable to configure custom search domains
 ERR_GPU_DOWNLOAD_TIMEOUT=83 # Timeout waiting for GPU driver download
-ERR_GPU_DRIVERS_START_FAIL=84 # nvidia-modprobe could not be started by systemctl
+ERR_GPU_DRIVERS_START_FAIL=84 # Generic GPU driver startup failure
 ERR_GPU_DRIVERS_INSTALL_TIMEOUT=85 # Timeout waiting for GPU drivers install
 ERR_GPU_DEVICE_PLUGIN_START_FAIL=86 # nvidia device plugin could not be started by systemctl
 ERR_GPU_INFO_ROM_CORRUPTED=87 # info ROM corrupted error when executing nvidia-smi
+ERR_GPU_CONTAINERD_NOT_READY=88 # containerd was not ready for GPU driver container operations
+ERR_GPU_DRIVER_CONTAINER_INSTALL_FAIL=89 # GPU driver container install command failed
 ERR_SGX_DRIVERS_INSTALL_TIMEOUT=90 # Timeout waiting for SGX prereqs to download
 ERR_SGX_DRIVERS_START_FAIL=91 # Failed to execute SGX driver binary
 ERR_AMDAMA_DRIVER_NOT_FOUND=95 # AMD AMA driver package not found for current kernel version
@@ -151,7 +153,6 @@ ERR_NVIDIA_DCGM_INSTALL=235 # Error installing Managed NVIDIA GPU experience pac
 ERR_NVIDIA_DCGM_FAIL=228 # Error starting or enabling NVIDIA DCGM service
 ERR_NVIDIA_DCGM_EXPORTER_FAIL=229 # Error starting or enabling NVIDIA DCGM Exporter service
 ERR_LOOKUP_ENABLE_MANAGED_GPU_EXPERIENCE_TAG=230 # Error checking nodepool tags for whether we need to enable managed GPU experience
-
 ERR_PULL_POD_INFRA_CONTAINER_IMAGE=233 # Error pulling pause image
 ERR_ORAS_PULL_SYSEXT_FAIL=231 # Error pulling systemd system extension artifact via oras from registry
 ERR_SYSEXT_VERSION_ID_NOT_FOUND=232 # VERSION_ID not found in /etc/os-release, required for sysext tag resolution
@@ -160,6 +161,11 @@ ERR_SYSEXT_VERSION_ID_NOT_FOUND=232 # VERSION_ID not found in /etc/os-release, r
 ERR_AKS_NODE_CONTROLLER_ERROR=240 # Generic error in AKS Node Controller
 ERR_AZNFS_RPM_DOWNLOAD_TIMEOUT=241 # Timeout downloading aznfs RPM from PMC
 ERR_AZNFS_INSTALL_FAIL=242 # Failed to install aznfs RPM package
+ERR_NVIDIA_MODPROBE_FAIL=243 # Error loading NVIDIA kernel modules with nvidia-modprobe
+ERR_NVIDIA_FABRIC_MANAGER_START_FAIL=244 # Error starting or enabling NVIDIA Fabric Manager service
+ERR_NVIDIA_SMI_FAIL=245 # Error validating NVIDIA GPU state with nvidia-smi
+ERR_NVIDIA_LDCONFIG_FAIL=246 # Error refreshing NVIDIA library linker cache with ldconfig
+ERR_NVIDIA_PERSISTENCED_START_FAIL=247 # Error starting or enabling NVIDIA persistence daemon
 # -----------------------------------------------------------------------------
 
 # This probably wasn't launched via a login shell, so ensure the PATH is correct.
