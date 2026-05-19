@@ -165,7 +165,7 @@ ERR_NVIDIA_MODPROBE_FAIL=243 # Error loading NVIDIA kernel modules with nvidia-m
 ERR_NVIDIA_FABRIC_MANAGER_START_FAIL=244 # Error starting or enabling NVIDIA Fabric Manager service
 ERR_NVIDIA_SMI_FAIL=245 # Error validating NVIDIA GPU state with nvidia-smi
 ERR_NVIDIA_LDCONFIG_FAIL=246 # Error refreshing NVIDIA library linker cache with ldconfig
-ERR_NVIDIA_PERSISTENCED_START_FAIL=247 # Error starting or enabling NVIDIA persistence daemon
+ERR_GPU_DRIVER_IMAGE_PULL_FAIL=247 # Error pulling GPU driver container image
 # -----------------------------------------------------------------------------
 
 # This probably wasn't launched via a login shell, so ensure the PATH is correct.

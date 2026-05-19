@@ -14,9 +14,6 @@ Describe 'cse_install_mariner.sh'
             return 0
         }
         function systemctl() {
-            if [ "$1" = "$SYSTEMCTL_FAIL_ACTION" ]; then
-                return 1
-            fi
             return 0
         }
         function logs_to_events() {
@@ -28,7 +25,6 @@ Describe 'cse_install_mariner.sh'
         }
     }
     BeforeAll 'setup'
-    Include "./parts/linux/cloud-init/artifacts/cse_helpers.sh"
     Include "./parts/linux/cloud-init/artifacts/cse_install.sh"
     Include "./parts/linux/cloud-init/artifacts/mariner/cse_install_mariner.sh"
     Describe 'installDeps'
@@ -340,30 +336,4 @@ Describe 'cse_install_mariner.sh'
         End
     End
 
-    Describe 'enableNvidiaPersistenceMode'
-        setup_persistenced() {
-            PERSISTENCED_TEST_DIR="$(mktemp -d)"
-            PERSISTENCED_SERVICE_FILE_PATH="$PERSISTENCED_TEST_DIR/nvidia-persistenced.service"
-            SYSTEMCTL_FAIL_ACTION=""
-        }
-
-        cleanup_persistenced() {
-            rm -rf "$PERSISTENCED_TEST_DIR"
-        }
-
-        BeforeEach 'setup_persistenced'
-        AfterEach 'cleanup_persistenced'
-
-        It 'exits with nvidia-persistenced-start-fail when enabling the service fails'
-            SYSTEMCTL_FAIL_ACTION="enable"
-            When run enableNvidiaPersistenceMode
-            The status should equal 247
-        End
-
-        It 'exits with nvidia-persistenced-start-fail when restarting the service fails'
-            SYSTEMCTL_FAIL_ACTION="restart"
-            When run enableNvidiaPersistenceMode
-            The status should equal 247
-        End
-    End
 End

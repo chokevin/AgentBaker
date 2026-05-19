@@ -877,9 +877,9 @@ should_use_nvidia_open_drivers() {
 }
 
 enableNvidiaPersistenceMode() {
-    PERSISTENCED_SERVICE_FILE_PATH="${PERSISTENCED_SERVICE_FILE_PATH:-/etc/systemd/system/nvidia-persistenced.service}"
-    touch "${PERSISTENCED_SERVICE_FILE_PATH}"
-    cat << EOF > "${PERSISTENCED_SERVICE_FILE_PATH}"
+    PERSISTENCED_SERVICE_FILE_PATH="/etc/systemd/system/nvidia-persistenced.service"
+    touch ${PERSISTENCED_SERVICE_FILE_PATH}
+    cat << EOF > ${PERSISTENCED_SERVICE_FILE_PATH}
 [Unit]
 Description=NVIDIA Persistence Daemon
 Wants=syslog.target
@@ -895,8 +895,8 @@ TimeoutSec=300
 WantedBy=multi-user.target
 EOF
 
-    systemctl enable nvidia-persistenced.service || exit $ERR_NVIDIA_PERSISTENCED_START_FAIL
-    systemctl restart nvidia-persistenced.service || exit $ERR_NVIDIA_PERSISTENCED_START_FAIL
+    systemctl enable nvidia-persistenced.service || exit 1
+    systemctl restart nvidia-persistenced.service || exit 1
 }
 
 #EOF

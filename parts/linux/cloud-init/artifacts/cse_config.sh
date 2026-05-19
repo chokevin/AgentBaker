@@ -960,14 +960,20 @@ configGPUDrivers() {
     if [ "$OS" = "$UBUNTU_OS_NAME" ]; then
         waitForContainerdReady || exit $ERR_GPU_CONTAINERD_NOT_READY
         mkdir -p /opt/{actions,gpu}
-        ctr -n k8s.io image pull $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG
-        retrycmd_if_failure 5 10 600 bash -c "$CTR_GPU_INSTALL_CMD $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG gpuinstall /entrypoint.sh install"
+        gpu_driver_image="${NVIDIA_DRIVER_IMAGE}:${NVIDIA_DRIVER_IMAGE_TAG}"
+        retrycmd_if_failure 5 10 600 ctr -n k8s.io image pull "$gpu_driver_image"
+        ret=$?
+        if [ "$ret" -ne 0 ]; then
+            echo "Failed to pull GPU driver image, exiting..."
+            exit $ERR_GPU_DRIVER_IMAGE_PULL_FAIL
+        fi
+        retrycmd_if_failure 5 10 600 bash -c "$CTR_GPU_INSTALL_CMD $gpu_driver_image gpuinstall /entrypoint.sh install"
         ret=$?
         if [ "$ret" -ne 0 ]; then
             echo "Failed to install GPU driver, exiting..."
             exit $ERR_GPU_DRIVER_CONTAINER_INSTALL_FAIL
         fi
-        ctr -n k8s.io images rm --sync $NVIDIA_DRIVER_IMAGE:$NVIDIA_DRIVER_IMAGE_TAG
+        ctr -n k8s.io images rm --sync "$gpu_driver_image"
     elif isMarinerOrAzureLinux "$OS" && ! isAzureLinuxOSGuard "$OS" "$OS_VARIANT"; then
         downloadGPUDrivers
         installNvidiaContainerToolkit

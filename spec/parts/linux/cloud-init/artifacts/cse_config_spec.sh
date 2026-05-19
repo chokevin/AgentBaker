@@ -1636,6 +1636,7 @@ SETUP_EOF
             GPU_DEST="/opt/gpu"
             CTR_STATUS=0
             CONTAINERD_READY_STATUS=0
+            GPU_PULL_STATUS=0
             GPUINSTALL_STATUS=0
             MODPROBE_STATUS=0
             SMI_STATUS=0
@@ -1665,6 +1666,9 @@ SETUP_EOF
 
         retrycmd_if_failure() {
             case "$*" in
+                *"image pull"*)
+                    return "$GPU_PULL_STATUS"
+                    ;;
                 *gpuinstall*)
                     return "$GPUINSTALL_STATUS"
                     ;;
@@ -1690,6 +1694,13 @@ SETUP_EOF
             CONTAINERD_READY_STATUS=1
             When run configGPUDrivers
             The status should equal 88
+        End
+
+        It 'exits with driver-image-pull-fail when the Ubuntu driver image pull fails'
+            GPU_PULL_STATUS=1
+            When run configGPUDrivers
+            The status should equal 247
+            The output should include "Failed to pull GPU driver image, exiting..."
         End
 
         It 'exits with driver-container-install-fail when the Ubuntu gpuinstall command fails'
